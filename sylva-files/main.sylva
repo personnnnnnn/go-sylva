@@ -1,0 +1,11 @@
+with {
+    std {
+        say
+    }
+}
+
+fn main() {
+    say("Hello, World!")
+}
+
+main()
