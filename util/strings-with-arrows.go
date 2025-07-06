@@ -32,7 +32,7 @@ func StringsWithArrows(text string, fileName string, start, end Position, linePr
 		if i == lineCount-1 {
 			colEnd = end.Col
 		} else {
-			colEnd = len(line) - 1
+			colEnd = len(line)
 		}
 
 		result += line + "\n"

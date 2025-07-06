@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	data := "res = 'Hello, ' + 'World!'"
+	data := "res = 'Hello, '\n+ 'World!'"
 
 	input := antlr.NewInputStream(data)
 	lexer := parser.NewSylvaLexer(input)
