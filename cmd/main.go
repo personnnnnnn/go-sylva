@@ -1,8 +1,29 @@
 package main
 
-import "sylva/sylva"
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"sylva/sylva"
+)
 
 func main() {
-	data := "items = [1, 2] res = items[2]"
-	sylva.Execute(data, "<stdin>")
+	fmt.Println("Press enter to exit")
+	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		fmt.Print("$ ")
+		if !scanner.Scan() {
+			break
+		}
+
+		input := strings.TrimSpace(scanner.Text()) // gets the whole line and trims whitespace
+
+		if input == "" {
+			break
+		}
+
+		sylva.Execute(input, "<stdin>")
+		fmt.Println()
+	}
 }
