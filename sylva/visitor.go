@@ -60,10 +60,21 @@ func (v *SylvaVisitor) GetDebugData(ctx antlr.ParserRuleContext) CommandDebugDat
 	endLine := stop.GetLine()
 	endColumn := stop.GetColumn() + len(stop.GetText())
 
+	startIdx := start.GetStart()
+	endIdx := stop.GetStop()
+
 	debug := CommandDebugData{
 		FileLocation: v.File,
-		Start:        ProgramLocation{Line: startLine, Column: startColumn},
-		End:          ProgramLocation{Line: endLine, Column: endColumn},
+		Start: ProgramLocation{
+			Line:   startLine,
+			Column: startColumn,
+			Idx:    startIdx,
+		},
+		End: ProgramLocation{
+			Line:   endLine,
+			Column: endColumn,
+			Idx:    endIdx,
+		},
 		FunctionDeclaration: struct {
 			FunctionName       string
 			FunctionLineNumber int

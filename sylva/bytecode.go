@@ -5,6 +5,7 @@ import "fmt"
 type ProgramLocation struct {
 	Line   int
 	Column int
+	Idx    int
 }
 
 type CommandDebugData struct {

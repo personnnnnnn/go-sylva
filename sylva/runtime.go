@@ -23,6 +23,11 @@ type SylvaRuntime struct {
 	topRegisterID      uint64
 	BytecodeToCommands map[int]int
 	CommandDebugData   map[int]CommandDebugData
+	SourceCode         string
+}
+
+func (runtime *SylvaRuntime) ProvideSourceCode(code string) {
+	runtime.SourceCode = code
 }
 
 func CreateSylvaRuntime() *SylvaRuntime {
@@ -161,7 +166,7 @@ func (runtime *SylvaRuntime) ReadBytecode() uint64 {
 func (runtime *SylvaRuntime) Inc() {
 	runtime.IP++
 }
-func (runtime *SylvaRuntime) Step() error {
+func (runtime *SylvaRuntime) step() error {
 	if runtime.IsDone() {
 		return nil
 	}
@@ -284,23 +289,44 @@ func (runtime *SylvaRuntime) Step() error {
 	return nil
 }
 
+func (runtime *SylvaRuntime) Step() error {
+	oldIP := runtime.IP
+	err := runtime.step()
+	if err == nil {
+		return nil
+	}
+	commandIndex := runtime.BytecodeToCommands[oldIP]
+	debugData := runtime.CommandDebugData[commandIndex]
+	return fmt.Errorf(
+		"runtime error: %v\n\tin file %v, line %v, column %v\n\n%v",
+		err,
+		debugData.FileLocation,
+		debugData.Start.Line,
+		debugData.Start.Column+1,
+		util.StringsWithArrows(
+			runtime.SourceCode,
+			debugData.FileLocation,
+			util.Position{
+				Col: debugData.Start.Column,
+				Ln:  debugData.Start.Line - 1,
+				Idx: debugData.Start.Idx,
+			},
+			util.Position{
+				Col: debugData.End.Column,
+				Ln:  debugData.End.Line - 1,
+				Idx: debugData.End.Idx,
+			},
+			"\t",
+		),
+	)
+}
+
 func (runtime *SylvaRuntime) ExecuteUntilDone() error {
 	runtime.IP = 0
 	for !runtime.IsDone() {
-		oldIP := runtime.IP
-		err := runtime.Step()
-		if err == nil {
-			continue
+		if err := runtime.Step(); err != nil {
+			return err
 		}
-		commandIndex := runtime.BytecodeToCommands[oldIP]
-		debugData := runtime.CommandDebugData[commandIndex]
-		return fmt.Errorf(
-			"runtime error: %v\n\tin file %v, line %v, column %v",
-			err,
-			debugData.FileLocation,
-			debugData.Start.Line,
-			debugData.Start.Column+1,
-		)
 	}
 	return nil
 }

@@ -29,6 +29,7 @@ func main() {
 	fmt.Println()
 
 	runtime := sylva.CreateSylvaRuntime()
+	runtime.ProvideSourceCode(data)
 
 	if err := runtime.ConvertToBytecode(commands); err != nil {
 		fmt.Println("Error while converting to bytecode: ", err)

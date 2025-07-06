@@ -138,7 +138,7 @@ func Umn(v Value) (Value, error) {
 	case float64:
 		return -x, nil
 	default:
-		return nil, fmt.Errorf("cannot apply umn to type '%T'", x)
+		return nil, fmt.Errorf("cannot apply unary minus to type '%T'", x)
 	}
 }
 
