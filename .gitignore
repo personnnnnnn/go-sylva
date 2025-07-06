@@ -1,3 +1,4 @@
 antlr/.antlr/*
 parser/*
-build-antlr.bash
+build-antlr.*
+.vscode/*

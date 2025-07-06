@@ -130,3 +130,18 @@ func Mod(a, b Value) (Value, error) {
 		return nil, fmt.Errorf("cannot mod '%T' and '%T'", a, b)
 	}
 }
+
+func Umn(v Value) (Value, error) {
+	switch x := v.(type) {
+	case int:
+		return -x, nil
+	case float64:
+		return -x, nil
+	default:
+		return nil, fmt.Errorf("cannot apply umn to type '%T' ('%v')", x, x)
+	}
+}
+
+func Concat(a, b Value) string {
+	return fmt.Sprintf("%v%v", a, b)
+}

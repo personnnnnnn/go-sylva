@@ -1,0 +1,33 @@
+LEGEND:
+$reg - register
+%val - value (register or immidiate)
+
+to convey a region that a command occupies, use the following syntax:
+... [file, location, start posotion, end position]
+file -> filepath in string form ("src/math.sylva")
+location -> (loc, line)
+    where loc = "<global>" if in the global scope on said file,
+                else the function name (like "fn main()")
+                if it's anonymous, do "fn <anon>()"
+          and line = the line of the function's definition (starting at 0)
+                     if loc == "<global>", set it to 0
+positions are in the form: (line, column), both starting at 0
+
+so:
+load $res, "Hello, World!" ["main.sylva", ("fn main()", 0), (1, 5), (1, 15)]
+
+COMMANDS:
+load $reg, %value
+free $reg -> used only for temporary values
+add $res, $x, $y
+sub $res, $x, $y
+mul $res, $x, $y
+div $res, $x, $y
+mod $res, $x, $y
+concat $res, $x, $y
+list $list, %initialCapacity
+listAppend $list $value
+listAppendAll $list $otherList
+
+-- Hello World (ish) --
+load $res, "Hello, World!"
