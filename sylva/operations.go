@@ -4,9 +4,9 @@ import "fmt"
 
 func Add(a, b Value) (Value, error) {
 	switch va := a.(type) {
-	case int:
+	case int64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			return va + vb, nil
 		case float64:
 			return float64(va) + vb, nil
@@ -15,7 +15,7 @@ func Add(a, b Value) (Value, error) {
 		}
 	case float64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			return va + float64(vb), nil
 		case float64:
 			return va + vb, nil
@@ -29,9 +29,9 @@ func Add(a, b Value) (Value, error) {
 
 func Sub(a, b Value) (Value, error) {
 	switch va := a.(type) {
-	case int:
+	case int64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			return va - vb, nil
 		case float64:
 			return float64(va) - vb, nil
@@ -40,7 +40,7 @@ func Sub(a, b Value) (Value, error) {
 		}
 	case float64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			return va - float64(vb), nil
 		case float64:
 			return va - vb, nil
@@ -54,9 +54,9 @@ func Sub(a, b Value) (Value, error) {
 
 func Mul(a, b Value) (Value, error) {
 	switch va := a.(type) {
-	case int:
+	case int64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			return va * vb, nil
 		case float64:
 			return float64(va) * vb, nil
@@ -65,7 +65,7 @@ func Mul(a, b Value) (Value, error) {
 		}
 	case float64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			return va * float64(vb), nil
 		case float64:
 			return va * vb, nil
@@ -79,9 +79,9 @@ func Mul(a, b Value) (Value, error) {
 
 func Div(a, b Value) (Value, error) {
 	switch va := a.(type) {
-	case int:
+	case int64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			if vb == 0 {
 				return nil, fmt.Errorf("cannot divide by 0")
 			}
@@ -96,7 +96,7 @@ func Div(a, b Value) (Value, error) {
 		}
 	case float64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			if vb == 0 {
 				return nil, fmt.Errorf("cannot divide by 0")
 			}
@@ -116,9 +116,9 @@ func Div(a, b Value) (Value, error) {
 
 func Mod(a, b Value) (Value, error) {
 	switch va := a.(type) {
-	case int:
+	case int64:
 		switch vb := b.(type) {
-		case int:
+		case int64:
 			if vb == 0 {
 				return nil, fmt.Errorf("cannot mod by 0")
 			}
@@ -133,12 +133,12 @@ func Mod(a, b Value) (Value, error) {
 
 func Umn(v Value) (Value, error) {
 	switch x := v.(type) {
-	case int:
+	case int64:
 		return -x, nil
 	case float64:
 		return -x, nil
 	default:
-		return nil, fmt.Errorf("cannot apply umn to type '%T' ('%v')", x, x)
+		return nil, fmt.Errorf("cannot apply umn to type '%T'", x)
 	}
 }
 

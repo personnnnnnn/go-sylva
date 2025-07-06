@@ -2,15 +2,22 @@ package sylva
 
 import (
 	"fmt"
-	"strconv"
 	"sylva/parser"
 
 	"github.com/antlr4-go/antlr/v4"
 )
 
-// this will be replaced by a command generator
+// visit calls return the register in which they stored their result
 type SylvaVisitor struct {
 	parser.BaseSylvaVisitor
+	File          string
+	Commands      []Command
+	registerTopID int
+}
+
+func (v *SylvaVisitor) GetRegister() string {
+	v.registerTopID++
+	return fmt.Sprintf("$i%v", v.registerTopID)
 }
 
 func (v *SylvaVisitor) Visit(tree antlr.ParseTree) any {
@@ -18,94 +25,193 @@ func (v *SylvaVisitor) Visit(tree antlr.ParseTree) any {
 }
 
 func (v *SylvaVisitor) VisitMulExpr(ctx *parser.MulExprContext) any {
-	left := v.Visit(ctx.Expr(0)).(Value)
-	right := v.Visit(ctx.Expr(1)).(Value)
+	left := v.Visit(ctx.Expr(0)).(string)
+	right := v.Visit(ctx.Expr(1)).(string)
 	op := ctx.GetOp().GetText()
+	var opStr string
+	res := v.GetRegister()
 	switch op {
 	case "*":
-		if res, err := Mul(left, right); err != nil {
-			return err
-		} else {
-			return res
-		}
+		opStr = "mul"
 	case "/":
-		if res, err := Div(left, right); err != nil {
-			return err
-		} else {
-			return res
-		}
+		opStr = "div"
+	case "%":
+		opStr = "mod"
 	default:
 		return fmt.Errorf("there is no mul operand %v", op)
 	}
+	v.Commands = append(v.Commands, &BinOpCommand{
+		Operation: opStr,
+		Register:  res,
+		A:         left,
+		B:         right,
+	})
+	v.Commands = append(v.Commands, &FreeCommand{Register: left})
+	v.Commands = append(v.Commands, &FreeCommand{Register: right})
+	return res
 }
+
+func (v *SylvaVisitor) GetDebugData(ctx antlr.ParserRuleContext) CommandDebugData {
+	start := ctx.GetStart()
+	stop := ctx.GetStop()
+
+	startLine := start.GetLine()
+	startColumn := start.GetColumn()
+	endLine := stop.GetLine()
+	endColumn := stop.GetColumn() + len(stop.GetText())
+
+	debug := CommandDebugData{
+		FileLocation: v.File,
+		Start:        ProgramLocation{Line: startLine, Column: startColumn},
+		End:          ProgramLocation{Line: endLine, Column: endColumn},
+		FunctionDeclaration: struct {
+			FunctionName       string
+			FunctionLineNumber int
+		}{
+			FunctionName:       "<global>",
+			FunctionLineNumber: 0,
+		},
+	}
+
+	return debug
+}
+
 func (v *SylvaVisitor) VisitAddExpr(ctx *parser.AddExprContext) any {
-	left := v.Visit(ctx.Expr(0)).(Value)
-	right := v.Visit(ctx.Expr(1)).(Value)
+	left := v.Visit(ctx.Expr(0)).(string)
+	right := v.Visit(ctx.Expr(1)).(string)
 	op := ctx.GetOp().GetText()
+	var opStr string
+	res := v.GetRegister()
 	switch op {
 	case "+":
-		if res, err := Add(left, right); err != nil {
-			return err
-		} else {
-			return res
-		}
+		opStr = "add"
 	case "-":
-		if res, err := Sub(left, right); err != nil {
-			return err
-		} else {
-			return res
-		}
+		opStr = "sub"
 	default:
 		return fmt.Errorf("there is no add operand %v", op)
 	}
+	debug := v.GetDebugData(ctx)
+	v.Commands = append(v.Commands, &BinOpCommand{
+		Operation: opStr,
+		Register:  res,
+		A:         left,
+		B:         right,
+		DebugData: debug,
+	})
+	v.Commands = append(v.Commands, &FreeCommand{Register: left, DebugData: debug})
+	v.Commands = append(v.Commands, &FreeCommand{Register: right, DebugData: debug})
+	return res
 }
+
 func (v *SylvaVisitor) VisitUnaryOp(ctx *parser.UnaryOpContext) any {
-	val := v.Visit(ctx.Expr()).(Value)
-	op := ctx.GetOp().GetText()
+	debug := v.GetDebugData(ctx)
+	// why is opToken nil???
+	opToken := ctx.GetOp()
+	op := opToken.GetText()
+	reg := v.GetRegister()
+	x := v.Visit(ctx.Expr()).(string)
 	switch op {
 	case "+":
-		return val
+		v.Commands = append(v.Commands, &LoadCommand{Register: reg, Value: x, DebugData: debug})
 	case "-":
-		if res, err := Umn(val); err != nil {
-			return err
-		} else {
-			return res
-		}
-	default:
-		return fmt.Errorf("there is no unary operand %v", op)
+		v.Commands = append(v.Commands, &UmnCommand{Register: reg, Value: x, DebugData: debug})
 	}
+	v.Commands = append(v.Commands, &FreeCommand{Register: x, DebugData: debug})
+	return reg
 }
-func (*SylvaVisitor) VisitIntValue(ctx *parser.IntValueContext) any {
+
+func (v *SylvaVisitor) VisitIntValue(ctx *parser.IntValueContext) any {
+	debug := v.GetDebugData(ctx)
 	str := ctx.INT().GetText()
-	if i, err := strconv.Atoi(str); err != nil {
-		return fmt.Errorf("error while parsing int: %v", err)
-	} else {
-		return i
-	}
+	reg := v.GetRegister()
+	v.Commands = append(v.Commands, &LoadCommand{Register: reg, Value: str, DebugData: debug})
+	return reg
 }
-func (*SylvaVisitor) VisitFloatValue(ctx *parser.FloatValueContext) any {
+
+func (v *SylvaVisitor) VisitFloatValue(ctx *parser.FloatValueContext) any {
+	debug := v.GetDebugData(ctx)
 	str := ctx.FLOAT().GetText()
-	if f, err := strconv.ParseFloat(str, 64); err != nil {
-		return fmt.Errorf("error while parsing float: %v", err)
-	} else {
-		return f
-	}
+	reg := v.GetRegister()
+	v.Commands = append(v.Commands, &LoadCommand{Register: reg, Value: str, DebugData: debug})
+	return reg
 }
-func (*SylvaVisitor) VisitStringValue(ctx *parser.StringValueContext) any {
-	// get the string contents, without the enclosing quotes
-	rawStr := ctx.STRING().GetText()[1:]
-	rawStr = rawStr[:len(rawStr)-1]
-	return rawStr
+
+func (v *SylvaVisitor) VisitStringValue(ctx *parser.StringValueContext) any {
+	debug := v.GetDebugData(ctx)
+	str := ctx.STRING().GetText()
+	str = str[1 : len(str)-1]
+	str = fmt.Sprintf("\"%v\"", str)
+	// TODO: multiline strings
+	reg := v.GetRegister()
+	v.Commands = append(v.Commands, &LoadCommand{Register: reg, Value: str, DebugData: debug})
+	return reg
 }
-func (*SylvaVisitor) VisitBoolValue(ctx *parser.BoolValueContext) any {
-	return ctx.BOOL().GetText() == "true"
+
+func (v *SylvaVisitor) VisitBoolValue(ctx *parser.BoolValueContext) any {
+	debug := v.GetDebugData(ctx)
+	str := ctx.BOOL().GetText()
+	reg := v.GetRegister()
+	v.Commands = append(v.Commands, &LoadCommand{Register: reg, Value: str, DebugData: debug})
+	return reg
 }
+
 func (v *SylvaVisitor) VisitParensValue(ctx *parser.ParensValueContext) any {
 	return v.Visit(ctx.Expr())
 }
+
 func (v *SylvaVisitor) VisitValueExpr(ctx *parser.ValueExprContext) any {
 	return v.Visit(ctx.Value())
 }
+
 func (v *SylvaVisitor) VisitConcatExpr(ctx *parser.ConcatExprContext) any {
-	return ""
+	debug := v.GetDebugData(ctx)
+	left := v.Visit(ctx.Expr(0)).(string)
+	right := v.Visit(ctx.Expr(1)).(string)
+	reg := v.GetRegister()
+	v.Commands = append(v.Commands, &BinOpCommand{Operation: "concat", Register: reg, A: left, B: right, DebugData: debug})
+	v.Commands = append(v.Commands, &FreeCommand{Register: left, DebugData: debug})
+	v.Commands = append(v.Commands, &FreeCommand{Register: right, DebugData: debug})
+	return reg
+}
+
+func (v *SylvaVisitor) VisitExprStatement(ctx *parser.ExprStatementContext) any {
+	debug := v.GetDebugData(ctx)
+	reg := v.Visit(ctx.Expr()).(string)
+	v.Commands = append(v.Commands, &FreeCommand{Register: reg, DebugData: debug})
+	return "<NULL>"
+}
+
+func (v *SylvaVisitor) VisitSetStatement(ctx *parser.SetStatementContext) any {
+	debug := v.GetDebugData(ctx)
+	reg := v.Visit(ctx.Expr()).(string)
+	varReg := fmt.Sprintf("$var%v", ctx.ID().GetText())
+	v.Commands = append(v.Commands, &LoadCommand{Register: varReg, Value: reg, DebugData: debug})
+	v.Commands = append(v.Commands, &FreeCommand{Register: reg, DebugData: debug})
+	return "<NULL>"
+}
+
+func (v *SylvaVisitor) VisitVarAccessValue(ctx *parser.VarAccessValueContext) any {
+	debug := v.GetDebugData(ctx)
+	str := ctx.ID().GetText()
+	reg := v.GetRegister()
+	varReg := fmt.Sprintf("$var%v", str)
+	v.Commands = append(v.Commands, &LoadCommand{Register: reg, Value: varReg, DebugData: debug})
+	return reg
+}
+
+func (v *SylvaVisitor) VisitFullProgram(ctx *parser.FullProgramContext) any {
+	for _, statement := range ctx.AllStatement() {
+		v.Visit(statement)
+	}
+	return "<NULL>"
+}
+
+func (v *SylvaVisitor) VisitListValue(ctx *parser.ListValueContext) any {
+	reg := v.GetRegister()
+	debug := v.GetDebugData(ctx)
+	v.Commands = append(v.Commands, &ListCommand{
+		Register:  reg,
+		DebugData: debug,
+	})
+	return reg
 }

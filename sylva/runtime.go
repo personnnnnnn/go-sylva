@@ -1,6 +1,7 @@
 package sylva
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"sylva/util"
@@ -266,6 +267,18 @@ func (runtime *SylvaRuntime) Step() error {
 		b := runtime.Registers[bReg]
 		res := Concat(a, b)
 		runtime.Registers[reg] = res
+	case LIST:
+		reg := runtime.ReadBytecode()
+		runtime.Registers[reg] = []Value{}
+	case UMN:
+		reg := runtime.ReadBytecode()
+		xReg := runtime.ReadBytecode()
+		x := runtime.Registers[xReg]
+		res, err := Umn(x)
+		if err != nil {
+			return err
+		}
+		runtime.Registers[reg] = res
 	}
 
 	return nil
@@ -274,13 +287,20 @@ func (runtime *SylvaRuntime) Step() error {
 func (runtime *SylvaRuntime) ExecuteUntilDone() error {
 	runtime.IP = 0
 	for !runtime.IsDone() {
-		// oldIP := runtime.IP
+		oldIP := runtime.IP
 		err := runtime.Step()
 		if err == nil {
 			continue
 		}
-		// TODO: use the given debug data to give a better error messages
-		return err
+		commandIndex := runtime.BytecodeToCommands[oldIP]
+		debugData := runtime.CommandDebugData[commandIndex]
+		return fmt.Errorf(
+			"runtime error: %v\n\tin file %v, line %v, column %v",
+			err,
+			debugData.FileLocation,
+			debugData.Start.Line,
+			debugData.Start.Column+1,
+		)
 	}
 	return nil
 }

@@ -66,6 +66,7 @@ const (
 	LOAD_TRUE   = 5
 	LOAD_FALSE  = 6
 	LOAD_NIL    = 7
+	LIST        = 8
 
 	FREE = 16
 
@@ -75,6 +76,8 @@ const (
 	DIV    = 35
 	MOD    = 36
 	CONCAT = 37
+
+	UMN = 42
 )
 
 func (c *LoadCommand) GetByteCode() func(runtime *SylvaRuntime) ([]uint64, error) {
@@ -190,5 +193,56 @@ func (c *BinOpCommand) GetByteCode() func(runtime *SylvaRuntime) ([]uint64, erro
 			return nil, fmt.Errorf("unknown binop command: %v", c.Operation)
 		}
 		return []uint64{command, reg, a, b}, nil
+	}
+}
+
+type ListCommand struct {
+	DebugData CommandDebugData
+	Register  string
+}
+
+func (c *ListCommand) GetDebugData() CommandDebugData {
+	return c.DebugData
+}
+
+func (c *ListCommand) StringRepresentation() string {
+	return fmt.Sprintf(
+		"list %v %v",
+		c.Register,
+		c.DebugData.StringRepresentation(),
+	)
+}
+
+func (c *ListCommand) GetByteCode() func(runtime *SylvaRuntime) ([]uint64, error) {
+	return func(runtime *SylvaRuntime) ([]uint64, error) {
+		reg := runtime.GetRegisterID(c.Register)
+		return []uint64{LIST, reg}, nil
+	}
+}
+
+type UmnCommand struct {
+	DebugData CommandDebugData
+	Register  string
+	Value     string
+}
+
+func (c *UmnCommand) GetDebugData() CommandDebugData {
+	return c.DebugData
+}
+
+func (c *UmnCommand) StringRepresentation() string {
+	return fmt.Sprintf(
+		"umn %v, %v %v",
+		c.Register,
+		c.Value,
+		c.DebugData.StringRepresentation(),
+	)
+}
+
+func (c *UmnCommand) GetByteCode() func(runtime *SylvaRuntime) ([]uint64, error) {
+	return func(runtime *SylvaRuntime) ([]uint64, error) {
+		reg := runtime.GetRegisterID(c.Register)
+		val := runtime.GetRegisterID(c.Value)
+		return []uint64{UMN, reg, val}, nil
 	}
 }

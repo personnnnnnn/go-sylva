@@ -4,14 +4,14 @@ $reg - register
 
 to convey a region that a command occupies, use the following syntax:
 ... [file, location, start posotion, end position]
-file -> filepath in string form ("src/math.sylva")
+file -> filepath in string form ("src/main.sylva")
 location -> (loc, line)
     where loc = "<global>" if in the global scope on said file,
                 else the function name (like "fn main()")
                 if it's anonymous, do "fn <anon>()"
-          and line = the line of the function's definition (starting at 0)
+          and line = the line of the function's definition (starting at 1)
                      if loc == "<global>", set it to 0
-positions are in the form: (line, column), both starting at 0
+positions are in the form: (line, column), line starting at 1 and column starting at 0
 
 so:
 load $res, "Hello, World!" ["main.sylva", ("fn main()", 0), (1, 5), (1, 15)]
@@ -24,8 +24,9 @@ sub $res, $x, $y
 mul $res, $x, $y
 div $res, $x, $y
 mod $res, $x, $y
+umn $res, $x
 concat $res, $x, $y
-list $list, %initialCapacity
+list $list
 listAppend $list $value
 listAppendAll $list $otherList
 
