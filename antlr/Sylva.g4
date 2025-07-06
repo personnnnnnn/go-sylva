@@ -14,11 +14,14 @@ MULTILINE_COMMENT: '/*' .*? '*/' -> skip;
 
 program: statement* EOF # FullProgram;
 
-//         vv temp
-statement: ID '=' expr # SetStatement | expr # ExprStatement;
+statement:
+	// 'let' ID '=' expr	# DefStatement
+	ID '=' expr	# SetStatement
+	| expr		# ExprStatement;
 
 expr:
 	op = ('+' | '-') expr				# UnaryOp
+	| expr '[' expr ']'					# IndexAccess
 	| expr ('..') expr					# ConcatExpr
 	| expr op = ('*' | '/' | '%') expr	# MulExpr
 	| expr op = ('+' | '-') expr		# AddExpr

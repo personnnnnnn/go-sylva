@@ -116,7 +116,6 @@ func (v *SylvaVisitor) VisitAddExpr(ctx *parser.AddExprContext) any {
 
 func (v *SylvaVisitor) VisitUnaryOp(ctx *parser.UnaryOpContext) any {
 	debug := v.GetDebugData(ctx)
-	// why is opToken nil???
 	opToken := ctx.GetOp()
 	op := opToken.GetText()
 	reg := v.GetRegister()
@@ -224,5 +223,42 @@ func (v *SylvaVisitor) VisitListValue(ctx *parser.ListValueContext) any {
 		Register:  reg,
 		DebugData: debug,
 	})
+
+	itemRegisters := []string{}
+
+	for _, item := range ctx.AllExpr() {
+		itemReg := v.Visit(item).(string)
+		itemRegisters = append(itemRegisters, itemReg)
+		v.Commands = append(v.Commands, &ListAppendCommand{
+			Register:  reg,
+			Item:      itemReg,
+			DebugData: debug,
+		})
+	}
+
+	for _, itemReg := range itemRegisters {
+		v.Commands = append(v.Commands, &FreeCommand{
+			Register:  itemReg,
+			DebugData: debug,
+		})
+	}
 	return reg
+}
+
+func (v *SylvaVisitor) VisitIndexAccess(ctx *parser.IndexAccessContext) any {
+	debug := v.GetDebugData(ctx)
+	resReg := v.GetRegister()
+	oReg := v.Visit(ctx.Expr(0)).(string)
+	itemReg := v.Visit(ctx.Expr(1)).(string)
+
+	v.Commands = append(v.Commands, &GetIdxCommand{
+		Register:  resReg,
+		O:         oReg,
+		Index:     itemReg,
+		DebugData: debug,
+	})
+	v.Commands = append(v.Commands, &FreeCommand{Register: oReg, DebugData: debug})
+	v.Commands = append(v.Commands, &FreeCommand{Register: itemReg, DebugData: debug})
+
+	return resReg
 }

@@ -284,6 +284,27 @@ func (runtime *SylvaRuntime) step() error {
 			return err
 		}
 		runtime.Registers[reg] = res
+	case LIST_APPEND:
+		reg := runtime.ReadBytecode()
+		itemReg := runtime.ReadBytecode()
+		list := runtime.Registers[reg]
+		if arr, ok := list.([]Value); !ok {
+			return fmt.Errorf("cannot append to type '%T'", list)
+		} else {
+			item := runtime.Registers[itemReg]
+			runtime.Registers[reg] = append(arr, item)
+		}
+	case GET_IDX:
+		reg := runtime.ReadBytecode()
+		oReg := runtime.ReadBytecode()
+		idxReg := runtime.ReadBytecode()
+		o := runtime.Registers[oReg]
+		idx := runtime.Registers[idxReg]
+		if res, err := GetIndex(o, idx); err != nil {
+			return err
+		} else {
+			runtime.Registers[reg] = res
+		}
 	}
 
 	return nil

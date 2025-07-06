@@ -145,3 +145,19 @@ func Umn(v Value) (Value, error) {
 func Concat(a, b Value) string {
 	return fmt.Sprintf("%v%v", a, b)
 }
+
+func GetIndex(o, idx Value) (Value, error) {
+	switch x := o.(type) {
+	case []Value:
+		if i, ok := idx.(int64); !ok {
+			return nil, fmt.Errorf("cannot index list with '%T'", idx)
+		} else {
+			if i < 0 || i >= int64(len(x)) {
+				return nil, fmt.Errorf("index %v out of range for list of length %v", idx, len(x))
+			}
+			return x[i], nil
+		}
+	default:
+		return nil, fmt.Errorf("cannot index type '%T'", x)
+	}
+}

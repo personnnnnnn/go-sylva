@@ -67,7 +67,6 @@ const (
 	LOAD_TRUE   = 5
 	LOAD_FALSE  = 6
 	LOAD_NIL    = 7
-	LIST        = 8
 
 	FREE = 16
 
@@ -78,7 +77,12 @@ const (
 	MOD    = 36
 	CONCAT = 37
 
-	UMN = 42
+	UMN = 48
+
+	LIST        = 64
+	LIST_APPEND = 65
+
+	GET_IDX = 80
 )
 
 func (c *LoadCommand) GetByteCode() func(runtime *SylvaRuntime) ([]uint64, error) {
@@ -245,5 +249,62 @@ func (c *UmnCommand) GetByteCode() func(runtime *SylvaRuntime) ([]uint64, error)
 		reg := runtime.GetRegisterID(c.Register)
 		val := runtime.GetRegisterID(c.Value)
 		return []uint64{UMN, reg, val}, nil
+	}
+}
+
+type ListAppendCommand struct {
+	DebugData CommandDebugData
+	Register  string
+	Item      string
+}
+
+func (c *ListAppendCommand) GetDebugData() CommandDebugData {
+	return c.DebugData
+}
+
+func (c *ListAppendCommand) StringRepresentation() string {
+	return fmt.Sprintf(
+		"listAppend %v, %v %v",
+		c.Register,
+		c.Item,
+		c.DebugData.StringRepresentation(),
+	)
+}
+
+func (c *ListAppendCommand) GetByteCode() func(runtime *SylvaRuntime) ([]uint64, error) {
+	return func(runtime *SylvaRuntime) ([]uint64, error) {
+		reg := runtime.GetRegisterID(c.Register)
+		item := runtime.GetRegisterID(c.Item)
+		return []uint64{LIST_APPEND, reg, item}, nil
+	}
+}
+
+type GetIdxCommand struct {
+	DebugData CommandDebugData
+	Register  string
+	O         string
+	Index     string
+}
+
+func (c *GetIdxCommand) GetDebugData() CommandDebugData {
+	return c.DebugData
+}
+
+func (c *GetIdxCommand) StringRepresentation() string {
+	return fmt.Sprintf(
+		"getIdx %v, %v, %v %v",
+		c.Register,
+		c.O,
+		c.Index,
+		c.DebugData.StringRepresentation(),
+	)
+}
+
+func (c *GetIdxCommand) GetByteCode() func(runtime *SylvaRuntime) ([]uint64, error) {
+	return func(runtime *SylvaRuntime) ([]uint64, error) {
+		reg := runtime.GetRegisterID(c.Register)
+		item := runtime.GetRegisterID(c.Index)
+		o := runtime.GetRegisterID(c.O)
+		return []uint64{GET_IDX, reg, o, item}, nil
 	}
 }

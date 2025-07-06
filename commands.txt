@@ -27,8 +27,9 @@ mod $res, $x, $y
 umn $res, $x
 concat $res, $x, $y
 list $list
-listAppend $list $value
-listAppendAll $list $otherList
+listAppend $list, $value
+listAppendAll $list, $otherList
+getIdx $res, $o, $idx
 
 -- Hello World (ish) --
 load $res, "Hello, World!"
