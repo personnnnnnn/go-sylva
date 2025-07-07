@@ -20,7 +20,6 @@ func StringsWithArrows(text string, fileName string, start, end Position, linePr
 
 	lineCount := end.Ln - start.Ln + 1
 	for i := range lineCount {
-		println(len(text), idxStart, idxEnd)
 		line := text[idxStart:idxEnd]
 		var colStart int
 		if i == 0 {

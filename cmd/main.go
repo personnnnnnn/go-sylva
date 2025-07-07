@@ -17,7 +17,7 @@ func main() {
 			break
 		}
 
-		input := strings.TrimSpace(scanner.Text()) // gets the whole line and trims whitespace
+		input := strings.TrimSpace(scanner.Text())
 
 		if input == "" {
 			break
